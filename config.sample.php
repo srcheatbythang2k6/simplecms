@@ -32,7 +32,7 @@ define('SECURE_AUTH_KEY', 'put-your-unique-phrase-here');
 date_default_timezone_set('Asia/Ho_Chi_Minh');
 
 // Debug Mode (set to false in production)
-define('DEBUG_MODE', false);
+define('DEBUG_MODE', true);
 
 // Session Configuration
 ini_set('session.cookie_httponly', 1);
