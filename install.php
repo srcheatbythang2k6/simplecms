@@ -9,43 +9,8 @@ error_reporting(E_ALL);
 ini_set('display_errors', 1);
 ini_set('log_errors', 1);
 
-// #region agent log
-$logData = [
-    'sessionId' => 'debug-session',
-    'runId' => 'run1',
-    'hypothesisId' => 'A',
-    'location' => 'install.php:15',
-    'message' => 'Script execution started',
-    'data' => [
-        'php_version' => PHP_VERSION,
-        'server_software' => $_SERVER['SERVER_SOFTWARE'] ?? 'Unknown',
-        'request_method' => $_SERVER['REQUEST_METHOD'] ?? 'GET',
-        'remote_addr' => $_SERVER['REMOTE_ADDR'] ?? 'Unknown',
-        'server_addr' => $_SERVER['SERVER_ADDR'] ?? 'Unknown'
-    ],
-    'timestamp' => round(microtime(true) * 1000)
-];
-file_put_contents('d:\\AI\\Cursor\\.cursor\\debug.log', json_encode($logData) . "\n", FILE_APPEND);
-// #endregion
-
-// Start session
-session_start();
-
-// Function to display error messages
+// Function to display error messages (defined early so we can use it for checks)
 function show_error($title, $message, $details = '') {
-    // #region agent log
-    $logData = [
-        'sessionId' => 'debug-session',
-        'runId' => 'run1',
-        'hypothesisId' => 'B',
-        'location' => 'install.php:show_error',
-        'message' => 'Error displayed to user',
-        'data' => ['title' => $title, 'message' => $message, 'details' => $details],
-        'timestamp' => round(microtime(true) * 1000)
-    ];
-    file_put_contents('d:\\AI\\Cursor\\.cursor\\debug.log', json_encode($logData) . "\n", FILE_APPEND);
-    // #endregion
-    
     echo '<!DOCTYPE html>
     <html lang="vi">
     <head>
@@ -129,28 +94,15 @@ function show_error($title, $message, $details = '') {
     exit;
 }
 
-// Check PHP version
+// Check PHP version first
 if (version_compare(PHP_VERSION, '7.4.0', '<')) {
-    // #region agent log
-    $logData = [
-        'sessionId' => 'debug-session',
-        'runId' => 'run1',
-        'hypothesisId' => 'C',
-        'location' => 'install.php:PHP_VERSION_CHECK',
-        'message' => 'PHP version too old',
-        'data' => ['current_version' => PHP_VERSION, 'required_version' => '7.4.0'],
-        'timestamp' => round(microtime(true) * 1000)
-    ];
-    file_put_contents('d:\\AI\\Cursor\\.cursor\\debug.log', json_encode($logData) . "\n", FILE_APPEND);
-    // #endregion
-    
     show_error(
         'PHP Version không đủ',
         'SimpleCMS yêu cầu PHP 7.4 trở lên. Phiên bản hiện tại: ' . PHP_VERSION
     );
 }
 
-// Check required extensions
+// Check required extensions BEFORE using them
 $required_extensions = ['pdo', 'pdo_mysql', 'mbstring', 'json'];
 $missing_extensions = [];
 
@@ -161,63 +113,36 @@ foreach ($required_extensions as $ext) {
 }
 
 if (!empty($missing_extensions)) {
-    // #region agent log
-    $logData = [
-        'sessionId' => 'debug-session',
-        'runId' => 'run1',
-        'hypothesisId' => 'D',
-        'location' => 'install.php:EXTENSION_CHECK',
-        'message' => 'Missing PHP extensions',
-        'data' => ['missing' => $missing_extensions],
-        'timestamp' => round(microtime(true) * 1000)
-    ];
-    file_put_contents('d:\\AI\\Cursor\\.cursor\\debug.log', json_encode($logData) . "\n", FILE_APPEND);
-    // #endregion
-    
     show_error(
         'Thiếu PHP Extensions',
         'Các extension sau chưa được cài đặt: ' . implode(', ', $missing_extensions),
-        'Chạy: sudo apt-get install php-' . implode(' php-', $missing_extensions)
+        'Chạy: sudo apt-get install php-' . implode(' php-', $missing_extensions) . '<br>Hoặc: sudo apt-get install php-pdo php-pdo-mysql php-mbstring php-json'
     );
 }
+
+// Fix session directory issue
+$session_path = ini_get('session.save_path');
+if (empty($session_path) || !is_dir($session_path) || !is_writable($session_path)) {
+    // Try to use a writable directory in the project
+    $custom_session_path = __DIR__ . '/sessions';
+    if (!is_dir($custom_session_path)) {
+        @mkdir($custom_session_path, 0755, true);
+    }
+    if (is_dir($custom_session_path) && is_writable($custom_session_path)) {
+        ini_set('session.save_path', $custom_session_path);
+    }
+}
+
+// Start session with error suppression (we'll handle errors gracefully)
+@session_start();
 
 // Check if already installed
 $config_file = __DIR__ . '/config.php';
 if (file_exists($config_file)) {
-    // #region agent log
-    $logData = [
-        'sessionId' => 'debug-session',
-        'runId' => 'run1',
-        'hypothesisId' => 'E',
-        'location' => 'install.php:CONFIG_CHECK',
-        'message' => 'Config file exists, checking database',
-        'data' => ['config_file' => $config_file],
-        'timestamp' => round(microtime(true) * 1000)
-    ];
-    file_put_contents('d:\\AI\\Cursor\\.cursor\\debug.log', json_encode($logData) . "\n", FILE_APPEND);
-    // #endregion
-    
     // Check if database is already set up
     try {
         require_once $config_file;
         if (defined('DB_HOST') && defined('DB_NAME') && defined('DB_USER') && defined('DB_PASS')) {
-            // #region agent log
-            $logData = [
-                'sessionId' => 'debug-session',
-                'runId' => 'run1',
-                'hypothesisId' => 'E',
-                'location' => 'install.php:DB_CONNECTION_ATTEMPT',
-                'message' => 'Attempting database connection',
-                'data' => [
-                    'db_host' => DB_HOST,
-                    'db_name' => DB_NAME,
-                    'db_user' => DB_USER
-                ],
-                'timestamp' => round(microtime(true) * 1000)
-            ];
-            file_put_contents('d:\\AI\\Cursor\\.cursor\\debug.log', json_encode($logData) . "\n", FILE_APPEND);
-            // #endregion
-            
             $pdo = new PDO(
                 "mysql:host=" . DB_HOST . ";dbname=" . DB_NAME . ";charset=utf8mb4",
                 DB_USER,
@@ -228,60 +153,17 @@ if (file_exists($config_file)) {
             // Check if users table exists
             $tables = $pdo->query("SHOW TABLES LIKE 'scms_users'")->fetchAll();
             if (!empty($tables)) {
-                // #region agent log
-                $logData = [
-                    'sessionId' => 'debug-session',
-                    'runId' => 'run1',
-                    'hypothesisId' => 'E',
-                    'location' => 'install.php:ALREADY_INSTALLED',
-                    'message' => 'Installation already complete, redirecting',
-                    'data' => [],
-                    'timestamp' => round(microtime(true) * 1000)
-                ];
-                file_put_contents('d:\\AI\\Cursor\\.cursor\\debug.log', json_encode($logData) . "\n", FILE_APPEND);
-                // #endregion
-                
                 header('Location: index.php');
                 exit;
             }
         }
     } catch (Exception $e) {
-        // #region agent log
-        $logData = [
-            'sessionId' => 'debug-session',
-            'runId' => 'run1',
-            'hypothesisId' => 'E',
-            'location' => 'install.php:DB_CONNECTION_ERROR',
-            'message' => 'Database connection failed, continuing with install',
-            'data' => ['error' => $e->getMessage()],
-            'timestamp' => round(microtime(true) * 1000)
-        ];
-        file_put_contents('d:\\AI\\Cursor\\.cursor\\debug.log', json_encode($logData) . "\n", FILE_APPEND);
-        // #endregion
         // Continue with installation
     }
 }
 
 // Handle form submission
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-    // #region agent log
-    $logData = [
-        'sessionId' => 'debug-session',
-        'runId' => 'run1',
-        'hypothesisId' => 'F',
-        'location' => 'install.php:FORM_SUBMIT',
-        'message' => 'Form submission received',
-        'data' => [
-            'has_site_name' => !empty($_POST['site_name'] ?? ''),
-            'has_admin_username' => !empty($_POST['admin_username'] ?? ''),
-            'has_db_host' => !empty($_POST['db_host'] ?? ''),
-            'has_db_name' => !empty($_POST['db_name'] ?? '')
-        ],
-        'timestamp' => round(microtime(true) * 1000)
-    ];
-    file_put_contents('d:\\AI\\Cursor\\.cursor\\debug.log', json_encode($logData) . "\n", FILE_APPEND);
-    // #endregion
-    
     try {
         // Validate inputs
         $site_name = trim($_POST['site_name'] ?? '');
@@ -308,19 +190,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         
         // Test database connection
         try {
-            // #region agent log
-            $logData = [
-                'sessionId' => 'debug-session',
-                'runId' => 'run1',
-                'hypothesisId' => 'F',
-                'location' => 'install.php:DB_TEST_BEFORE',
-                'message' => 'Testing database connection before install',
-                'data' => ['db_host' => $db_host, 'db_name' => $db_name, 'db_user' => $db_user],
-                'timestamp' => round(microtime(true) * 1000)
-            ];
-            file_put_contents('d:\\AI\\Cursor\\.cursor\\debug.log', json_encode($logData) . "\n", FILE_APPEND);
-            // #endregion
-            
             $pdo = new PDO(
                 "mysql:host=$db_host;charset=utf8mb4",
                 $db_user,
@@ -330,33 +199,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     PDO::ATTR_DEFAULT_FETCH_MODE => PDO::FETCH_ASSOC
                 ]
             );
-            
-            // #region agent log
-            $logData = [
-                'sessionId' => 'debug-session',
-                'runId' => 'run1',
-                'hypothesisId' => 'F',
-                'location' => 'install.php:DB_TEST_SUCCESS',
-                'message' => 'Database connection successful',
-                'data' => [],
-                'timestamp' => round(microtime(true) * 1000)
-            ];
-            file_put_contents('d:\\AI\\Cursor\\.cursor\\debug.log', json_encode($logData) . "\n", FILE_APPEND);
-            // #endregion
         } catch (PDOException $e) {
-            // #region agent log
-            $logData = [
-                'sessionId' => 'debug-session',
-                'runId' => 'run1',
-                'hypothesisId' => 'F',
-                'location' => 'install.php:DB_TEST_FAILED',
-                'message' => 'Database connection failed',
-                'data' => ['error' => $e->getMessage(), 'code' => $e->getCode()],
-                'timestamp' => round(microtime(true) * 1000)
-            ];
-            file_put_contents('d:\\AI\\Cursor\\.cursor\\debug.log', json_encode($logData) . "\n", FILE_APPEND);
-            // #endregion
-            
             throw new Exception('Không thể kết nối MySQL: ' . $e->getMessage());
         }
         
@@ -472,38 +315,12 @@ define('DEBUG_MODE', false);
             throw new Exception('Không thể tạo file config.php. Kiểm tra quyền ghi!');
         }
         
-        // #region agent log
-        $logData = [
-            'sessionId' => 'debug-session',
-            'runId' => 'run1',
-            'hypothesisId' => 'F',
-            'location' => 'install.php:INSTALL_SUCCESS',
-            'message' => 'Installation completed successfully',
-            'data' => ['config_file' => $config_file],
-            'timestamp' => round(microtime(true) * 1000)
-        ];
-        file_put_contents('d:\\AI\\Cursor\\.cursor\\debug.log', json_encode($logData) . "\n", FILE_APPEND);
-        // #endregion
-        
         // Success - redirect
         $_SESSION['install_success'] = true;
         header('Location: install.php?step=complete');
         exit;
         
     } catch (Exception $e) {
-        // #region agent log
-        $logData = [
-            'sessionId' => 'debug-session',
-            'runId' => 'run1',
-            'hypothesisId' => 'F',
-            'location' => 'install.php:INSTALL_ERROR',
-            'message' => 'Installation error occurred',
-            'data' => ['error' => $e->getMessage()],
-            'timestamp' => round(microtime(true) * 1000)
-        ];
-        file_put_contents('d:\\AI\\Cursor\\.cursor\\debug.log', json_encode($logData) . "\n", FILE_APPEND);
-        // #endregion
-        
         $error_message = $e->getMessage();
     }
 }
@@ -778,3 +595,4 @@ if (isset($_GET['step']) && $_GET['step'] === 'complete' && isset($_SESSION['ins
     </div>
 </body>
 </html>
+
