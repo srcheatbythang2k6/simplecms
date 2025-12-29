@@ -1,12 +1,4 @@
 <?php
-// 1. Cấu hình Session phải để lên đầu tiên để tránh lỗi Warning
-ini_set('session.cookie_httponly', 1);
-ini_set('session.use_only_cookies', 1);
-ini_set('session.cookie_secure', 0); 
-
-if (session_status() === PHP_SESSION_NONE) {
-    session_start();
-}
 
 /**
  * SimpleCMS Configuration
