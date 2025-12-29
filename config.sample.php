@@ -5,11 +5,10 @@
  */
 
 // Database Configuration
-define('DB_HOST', 'localhost');
-define('DB_NAME', 'simplecms');
-define('DB_USER', 'simplecms_user');
-define('DB_PASS', 'your_password_here');
-define('DB_CHARSET', 'utf8mb4');
+define('DB_HOST', '127.0.0.1'); // Đổi localhost thành 127.0.0.1
+define('DB_NAME', 'tên_database_của_bạn');
+define('DB_USER', 'tên_user_mysql');
+define('DB_PASS', 'mật_khẩu_thật_của_bạn');
 
 // Site Configuration
 define('SITE_URL', 'http://localhost');
