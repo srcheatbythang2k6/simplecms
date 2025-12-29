@@ -1,5 +1,5 @@
 <?php
-// 1. Cấu hình Session phải để lên đầu tiên để tránh lỗi Warning
+// Cấu hình Session đặt lên đầu
 ini_set('session.cookie_httponly', 1);
 ini_set('session.use_only_cookies', 1);
 ini_set('session.cookie_secure', 0); 
@@ -8,21 +8,11 @@ if (session_status() === PHP_SESSION_NONE) {
     session_start();
 }
 
-/**
- * SimpleCMS Configuration
- */
-
-// 2. Cấu hình Database - Hãy chắc chắn các thông số này đúng với MySQL của bạn
-define('DB_HOST', '127.0.0.1'); // Dùng IP để ổn định hơn localhost
-define('DB_NAME', 'simplecms'); 
-define('DB_USER', 'root');      // Thử dùng root nếu user kia chưa được cấp quyền
-define('DB_PASS', 'mật_khẩu_mysql_của_bạn'); 
-define('DB_CHARSET', 'utf8mb4');
-
-// 3. Các cấu hình khác giữ nguyên...
-define('SITE_URL', 'http://192.168.202.134'); // Đổi thành IP máy bạn như trong hình
-define('SITE_NAME', 'SimpleCMS');
-define('SITE_DESC', 'Open Source Content Management System');
+// Sau đó mới đến cấu hình Database
+define('DB_HOST', 'localhost');
+define('DB_NAME', 'simplecms');
+define('DB_USER', 'BuiThang');
+define('DB_PASS', 'mật_khẩu_của_bạn');
 
 // ... (giữ nguyên phần Path Configuration bên dưới)
 // Path Configuration
