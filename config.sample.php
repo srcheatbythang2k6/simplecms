@@ -1,95 +1,46 @@
 <?php
 /**
- * SimpleCMS Installation Script - Clean Version
+ * SimpleCMS Configuration
  */
-require_once 'config.php';
 
-// 1. Nếu đã có file khóa thì không cho cài lại
-if (file_exists('install.lock')) {
-    header('Location: index.php');
-    exit;
+// 1. Cấu hình Session (Phải ở đầu tiên để hết lỗi Warning)
+ini_set('session.cookie_httponly', 1);
+ini_set('session.use_only_cookies', 1);
+ini_set('session.cookie_secure', 0); 
+
+if (session_status() === PHP_SESSION_NONE) {
+    session_start();
 }
 
-$message = '';
-$error = false;
+// 2. Cấu hình Database
+define('DB_HOST', '127.0.0.1'); // Dùng IP để ổn định hơn localhost
+define('DB_NAME', 'simplecms');
+define('DB_USER', 'BuiThang');
+define('DB_PASS', 'mật_khẩu_mysql_của_bạn'); // Thay mật khẩu thật của bạn vào đây
+define('DB_CHARSET', 'utf8mb4');
 
-if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-    try {
-        $dsn = "mysql:host=" . DB_HOST . ";dbname=" . DB_NAME . ";charset=" . DB_CHARSET;
-        $pdo = new PDO($dsn, DB_USER, DB_PASS, [PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION]);
+// 3. Cấu hình Website
+define('SITE_URL', 'http://192.168.202.134');
+define('SITE_NAME', 'SimpleCMS');
+define('SITE_DESC', 'Hệ quản trị nội dung mã nguồn mở');
 
-        // 2. Tạo bảng dữ liệu
-        $sql = "
-        CREATE TABLE IF NOT EXISTS users (
-            id INT AUTO_INCREMENT PRIMARY KEY,
-            username VARCHAR(50) NOT NULL UNIQUE,
-            password VARCHAR(255) NOT NULL,
-            email VARCHAR(100) NOT NULL,
-            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-        );
-        CREATE TABLE IF NOT EXISTS posts (
-            id INT AUTO_INCREMENT PRIMARY KEY,
-            title VARCHAR(255) NOT NULL,
-            slug VARCHAR(255) NOT NULL UNIQUE,
-            content TEXT,
-            excerpt TEXT,
-            featured_image VARCHAR(255),
-            status ENUM('published', 'draft') DEFAULT 'published',
-            author_id INT,
-            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-            FOREIGN KEY (author_id) REFERENCES users(id)
-        );";
-        $pdo->exec($sql);
+// 4. Cấu hình đường dẫn
+define('ROOT_PATH', dirname(__FILE__));
+define('ADMIN_PATH', ROOT_PATH . '/admin');
+define('INCLUDES_PATH', ROOT_PATH . '/includes');
+define('THEMES_PATH', ROOT_PATH . '/themes');
+define('PLUGINS_PATH', ROOT_PATH . '/plugins');
+define('UPLOADS_PATH', ROOT_PATH . '/uploads');
 
-        // 3. Tạo Admin
-        $admin_user = $_POST['admin_user'];
-        $admin_pass = password_hash($_POST['admin_pass'], PASSWORD_DEFAULT);
-        $admin_email = $_POST['admin_email'];
+// 5. Bảo mật & Debug
+define('AUTH_KEY', 'phim-bam-bi-mat-cua-ban');
+date_default_timezone_set('Asia/Ho_Chi_Minh');
+define('DEBUG_MODE', true);
 
-        $stmt = $pdo->prepare("INSERT INTO users (username, password, email) VALUES (?, ?, ?)");
-        $stmt->execute([$admin_user, $admin_pass, $admin_email]);
-
-        // 4. Tạo file khóa
-        file_put_contents('install.lock', date('Y-m-d H:i:s'));
-        $message = "Cài đặt thành công!";
-    } catch (PDOException $e) {
-        $error = true;
-        $message = "Lỗi SQL: " . $e->getMessage();
-    }
+if(DEBUG_MODE) {
+    error_reporting(E_ALL);
+    ini_set('display_errors', 1);
+} else {
+    error_reporting(0);
+    ini_set('display_errors', 0);
 }
-?>
-<!DOCTYPE html>
-<html lang="vi">
-<head>
-    <meta charset="UTF-8">
-    <title>Cài đặt SimpleCMS</title>
-    <style>
-        body { font-family: sans-serif; background: #5d5fef; display: flex; justify-content: center; align-items: center; height: 100vh; margin: 0; }
-        .box { background: #fff; padding: 40px; border-radius: 12px; width: 350px; box-shadow: 0 4px 20px rgba(0,0,0,0.2); }
-        h2 { text-align: center; color: #333; margin-bottom: 20px; }
-        input { width: 100%; padding: 12px; margin: 8px 0; border: 1px solid #ddd; border-radius: 6px; box-sizing: border-box; }
-        button { width: 100%; padding: 12px; background: #5d5fef; color: white; border: none; border-radius: 6px; cursor: pointer; font-weight: bold; margin-top: 10px; }
-        .msg { padding: 10px; border-radius: 4px; margin-bottom: 10px; text-align: center; }
-        .success { background: #d4edda; color: #155724; }
-        .error { background: #f8d7da; color: #721c24; }
-    </style>
-</head>
-<body>
-    <div class="box">
-        <?php if ($message): ?>
-            <div class="msg <?php echo $error ? 'error' : 'success'; ?>"><?php echo $message; ?></div>
-            <?php if (!$error): ?>
-                <p style="text-align:center;"><a href="index.php" style="color:#5d5fef;">Vào trang chủ</a></p>
-            <?php endif; ?>
-        <?php else: ?>
-            <h2>Cài đặt Admin</h2>
-            <form method="POST">
-                <input type="text" name="admin_user" placeholder="Tên đăng nhập" required>
-                <input type="email" name="admin_email" placeholder="Email" required>
-                <input type="password" name="admin_pass" placeholder="Mật khẩu" required>
-                <button type="submit">Hoàn tất cài đặt</button>
-            </form>
-        <?php endif; ?>
-    </div>
-</body>
-</html>
