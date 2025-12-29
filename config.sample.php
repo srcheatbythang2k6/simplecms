@@ -2,15 +2,9 @@
 /**
  * SimpleCMS Installation Script - Clean Version
  */
+require_once 'config.php';
 
-// 1. Phải nạp file config để lấy thông số database
-if (file_exists('config.php')) {
-    require_once 'config.php';
-} else {
-    die("Lỗi: Không tìm thấy file config.php. Hãy tạo file config.php trước.");
-}
-
-// 2. Kiểm tra nếu đã có file khóa thì không cho cài đè
+// 1. Nếu đã có file khóa thì không cho cài lại
 if (file_exists('install.lock')) {
     header('Location: index.php');
     exit;
@@ -21,13 +15,10 @@ $error = false;
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     try {
-        // Kết nối PDO với thông số từ config.php
         $dsn = "mysql:host=" . DB_HOST . ";dbname=" . DB_NAME . ";charset=" . DB_CHARSET;
-        $pdo = new PDO($dsn, DB_USER, DB_PASS, [
-            PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION
-        ]);
+        $pdo = new PDO($dsn, DB_USER, DB_PASS, [PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION]);
 
-        // 3. Chạy lệnh tạo bảng (Schema)
+        // 2. Tạo bảng dữ liệu
         $sql = "
         CREATE TABLE IF NOT EXISTS users (
             id INT AUTO_INCREMENT PRIMARY KEY,
@@ -50,7 +41,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         );";
         $pdo->exec($sql);
 
-        // 4. Mã hóa mật khẩu và tạo tài khoản Admin
+        // 3. Tạo Admin
         $admin_user = $_POST['admin_user'];
         $admin_pass = password_hash($_POST['admin_pass'], PASSWORD_DEFAULT);
         $admin_email = $_POST['admin_email'];
@@ -58,7 +49,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $stmt = $pdo->prepare("INSERT INTO users (username, password, email) VALUES (?, ?, ?)");
         $stmt->execute([$admin_user, $admin_pass, $admin_email]);
 
-        // 5. Khóa bộ cài đặt
+        // 4. Tạo file khóa
         file_put_contents('install.lock', date('Y-m-d H:i:s'));
         $message = "Cài đặt thành công!";
     } catch (PDOException $e) {
@@ -74,10 +65,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     <title>Cài đặt SimpleCMS</title>
     <style>
         body { font-family: sans-serif; background: #5d5fef; display: flex; justify-content: center; align-items: center; height: 100vh; margin: 0; }
-        .box { background: #fff; padding: 40px; border-radius: 12px; shadow: 0 4px 20px rgba(0,0,0,0.1); width: 350px; }
-        h2 { margin-bottom: 20px; text-align: center; color: #333; }
-        input { width: 100%; padding: 12px; margin: 10px 0; border: 1px solid #ddd; border-radius: 6px; box-sizing: border-box; }
-        button { width: 100%; padding: 12px; background: #5d5fef; color: #fff; border: none; border-radius: 6px; cursor: pointer; font-weight: bold; }
+        .box { background: #fff; padding: 40px; border-radius: 12px; width: 350px; box-shadow: 0 4px 20px rgba(0,0,0,0.2); }
+        h2 { text-align: center; color: #333; margin-bottom: 20px; }
+        input { width: 100%; padding: 12px; margin: 8px 0; border: 1px solid #ddd; border-radius: 6px; box-sizing: border-box; }
+        button { width: 100%; padding: 12px; background: #5d5fef; color: white; border: none; border-radius: 6px; cursor: pointer; font-weight: bold; margin-top: 10px; }
         .msg { padding: 10px; border-radius: 4px; margin-bottom: 10px; text-align: center; }
         .success { background: #d4edda; color: #155724; }
         .error { background: #f8d7da; color: #721c24; }
@@ -88,7 +79,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         <?php if ($message): ?>
             <div class="msg <?php echo $error ? 'error' : 'success'; ?>"><?php echo $message; ?></div>
             <?php if (!$error): ?>
-                <p style="text-align:center;"><a href="index.php">Vào trang chủ</a></p>
+                <p style="text-align:center;"><a href="index.php" style="color:#5d5fef;">Vào trang chủ</a></p>
             <?php endif; ?>
         <?php else: ?>
             <h2>Cài đặt Admin</h2>
