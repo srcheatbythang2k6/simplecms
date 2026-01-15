@@ -1,17 +1,18 @@
-<?php
-error_reporting(E_ALL);
-ini_set('display_errors', 1);
+<?php>
+echo -e "${GREEN}[7/8] Creating configuration file...${NC}"
+if [ ! -f "config.php" ]; then
+  cp config.sample.php config.php
 
-/* SESSION */
-if (session_status() === PHP_SESSION_NONE) {
-    session_start();
-}
+  # Replace placeholders
+  sed -i "s/DB_HOST', '.*'/DB_HOST', 'localhost'/" config.php
+  sed -i "s/DB_NAME', '.*'/DB_NAME', '$DB_NAME'/" config.php
+  sed -i "s/DB_USER', '.*'/DB_USER', '$DB_USER'/" config.php
+  sed -i "s/DB_PASS', '.*'/DB_PASS', '$DB_PASS'/" config.php
+  sed -i "s|SITE_URL', '.*'|SITE_URL', 'http://$DOMAIN'|" config.php
 
-/* DATABASE CONFIG */
-define('DB_HOST', 'localhost');
-define('DB_NAME', 'simplecms');
-define('DB_USER', 'simplecms_user');
-define('DB_PASS', 'MAT_KHAU_MYSQL_CUA_BAN');
-
-/* SITE */
-define('SITE_URL', 'http://192.168.202.134');
+  # Generate random keys
+  AUTH_KEY=$(openssl rand -base64 32)
+  SECURE_KEY=$(openssl rand -base64 32)
+  sed -i "s/AUTH_KEY', '.*'/AUTH_KEY', '$AUTH_KEY'/" config.php
+  sed -i "s/SECURE_AUTH_KEY', '.*'/SECURE_AUTH_KEY', '$SECURE_KEY'/" config.php
+fi
