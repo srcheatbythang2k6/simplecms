@@ -1,17 +1,17 @@
 <?php
-require_once 'config.php';
-require_once 'includes/functions.php';
+require_once 'includes/auth.php';
+require_once 'includes/db.php';
+require_login();
 
-$db = db_connect();
-$id = (int)$_GET['id'];
-$stmt = $db->prepare("SELECT * FROM posts WHERE id = ?");
-$stmt->bind_param("i", $id);
-$stmt->execute();
-$post = $stmt->get_result()->fetch_assoc();
-
-if (!$post) die("Bài viết không tồn tại.");
-
-echo "<h1>" . htmlspecialchars($post['title']) . "</h1>";
-echo "<div>" . nl2br(htmlspecialchars($post['content'])) . "</div>";
-echo "<a href='index.php'>Quay lại</a>";
+if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+    $stmt = $pdo->prepare("INSERT INTO posts (title, content) VALUES (?,?)");
+    $stmt->execute([$_POST['title'], $_POST['content']]);
+    echo "✅ Post published";
+}
 ?>
+
+<form method="post">
+    <input name="title" placeholder="Title"><br>
+    <textarea name="content" placeholder="Content"></textarea><br>
+    <button>Publish</button>
+</form>
