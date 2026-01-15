@@ -1,21 +1,24 @@
 <?php
-require_once 'config.php';
-require_once 'includes/functions.php';
+require_once 'includes/db.php';
 
-if ($_SERVER['REQUEST_METHOD'] == 'POST') {
-    // Đây là bản demo, mật khẩu mặc định là 'admin'
-    if ($_POST['username'] == 'admin' && $_POST['password'] == 'admin') {
-        $_SESSION['user_id'] = 1;
-        header("Location: admin/index.php");
-    } else {
-        $error = "Sai tài khoản hoặc mật khẩu!";
+if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+    $stmt = $pdo->prepare("SELECT * FROM users WHERE username=?");
+    $stmt->execute([$_POST['username']]);
+    $user = $stmt->fetch();
+
+    if ($user && password_verify($_POST['password'], $user['password'])) {
+        $_SESSION['user'] = $user['username'];
+        header("Location: /admin");
+        exit;
     }
+    $error = "Sai tài khoản hoặc mật khẩu";
 }
 ?>
-<form method="POST">
-    <h2>Đăng nhập hệ thống</h2>
-    <?php if(isset($error)) echo "<p style='color:red'>$error</p>"; ?>
-    <input type="text" name="username" placeholder="Username" required><br>
-    <input type="password" name="password" placeholder="Password" required><br>
-    <button type="submit">Đăng nhập</button>
+
+<form method="post">
+    <h2>Login</h2>
+    <?= isset($error) ? $error : '' ?><br>
+    <input name="username" placeholder="Username"><br>
+    <input name="password" type="password" placeholder="Password"><br>
+    <button>Login</button>
 </form>
