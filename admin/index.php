@@ -8,12 +8,14 @@ require_login();
 <!DOCTYPE html>
 <html>
 <head>
-    <meta charset="utf-8">
-    <title>Admin Dashboard</title>
+    <meta charset="UTF-8">
+    <title>Admin</title>
 </head>
 <body>
     <h1>Admin Dashboard</h1>
-    <p>Xin chào, <?= $_SESSION['user'] ?></p>
-    <a href="/post.php">➕ New Post</a>
+    <p>Xin chào: <b><?= $_SESSION['user'] ?></b></p>
+
+    <a href="/post.php">➕ Thêm bài viết</a><br><br>
+    <a href="/logout.php">🚪 Đăng xuất</a>
 </body>
 </html>
